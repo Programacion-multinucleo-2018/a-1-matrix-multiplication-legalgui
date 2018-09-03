@@ -1,13 +1,16 @@
+// system libraries
 #include <cuda_runtime.h>
 #include <cstdio>
 #include <cstdlib>
 #include <math.h>
 #include <chrono>
 
+// size definition. modify as needed
 #define N 2000
 
 using namespace std;
 
+// safe call definition
 static inline void _safe_cuda_call(cudaError err, const char* msg, const char* file_name, const int line_number){
 	if(err!=cudaSuccess){
 		fprintf(stderr,"%s\n\nFile: %s\n\nLine Number: %d\n\nReason: %s\n",msg,file_name,line_number,cudaGetErrorString(err));
@@ -15,14 +18,17 @@ static inline void _safe_cuda_call(cudaError err, const char* msg, const char* f
 	}
 }
 
+// safe call definition
 #define SAFE_CALL(call,msg) _safe_cuda_call(call,msg,__FILE__,__LINE__)
 
+// initialize major row matrix
 void initializeMatrix(long *ip, const int nxy){
   for(int i = 0; i < nxy; i++)
       ip[i] = i;
     return;
 }
 
+// utility function to check result
 void checkResult(long *hostRef, long *gpuRef, const int nxy){
     double epsilon = 1.0E-8;
     bool match = 1;
@@ -41,6 +47,7 @@ void checkResult(long *hostRef, long *gpuRef, const int nxy){
         printf("Arrays do not match.\n\n");
 }
 
+// multiply matrix on host
 void multiplyMatrixOnHost(long *A, long *B, long *C, const int nxy){
 
     long *ia = A;
@@ -58,6 +65,7 @@ void multiplyMatrixOnHost(long *A, long *B, long *C, const int nxy){
     return;
 }
 
+// function to multiply matrix on host with threads
 void multiplyMatrixOnHostThreads(long *A, long *B, long *C, const int nxy){
 
     long *ia = A;
@@ -65,6 +73,7 @@ void multiplyMatrixOnHostThreads(long *A, long *B, long *C, const int nxy){
     long *ic = C;
 
     int i = 0;
+    // use the pragma directive to automatically paralelize
     #pragma omp parallel for private(i) shared(ia, ib, ic)
 		for(i = 0; i < nxy; i++) {
 			 for(int j = 0; j < nxy; j++) {
@@ -77,8 +86,10 @@ void multiplyMatrixOnHostThreads(long *A, long *B, long *C, const int nxy){
     return;
 }
 
+// kernel to multiply matrix on gpu
 __global__ void multiplyMatrixOnGPU(long *A, long *B, long *C, const int nxy){
 
+		// get ix and iy from cuda defined variables
 		unsigned int ix = blockIdx.x * blockDim.x + threadIdx.x;
 		unsigned int iy = blockIdx.y * blockDim.y + threadIdx.y;
 
