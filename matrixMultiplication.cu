@@ -1,4 +1,5 @@
 // system libraries
+// use nvcc -o (output name) -Wno-deprecated-gpu-targets -std=c++11 -Xcompiler -fopenmp  file_name.cu
 #include <cuda_runtime.h>
 #include <cstdio>
 #include <cstdlib>
